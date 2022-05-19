@@ -47,6 +47,7 @@ func main() {
             DbUser: "some_user",
             DbPassword: "some_pwd",
             DbHost: "some_host",
+            DbPort: 3306, // not mandatory to provide, will default to 3306 if not provided
             // this is optional, it defaults to false but shall be set to true when on Cloud Run.
             // See https://cloud.google.com/sql/docs/mysql/connect-run#go
             UseUnixSocket: true,
