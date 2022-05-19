@@ -167,7 +167,7 @@ func Test_FindClinicById(t *testing.T) {
     )
 
     repo := repository.NewSqlRepository(orm)
-    patientGatewayServiceV1 := service.NewPatientGatewayServiceV1(repo) // we could inject a mock here otherwise also
+    patientGatewayServiceV1 := service.NewPatientGatewayServiceV1(repo) // we could inject a mock here otherwise
 
     patientGatewayServiceV1.FindClinicById(...)
 }
