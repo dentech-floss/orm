@@ -27,7 +27,7 @@ type Clinic struct {
 }
 ```
 
-Create an ORM instance and inject it into an implementation of the repository tier, which then is injected into the service(s)/app(s):
+Create an ORM instance and inject it into an implementation of the repository tier, which then is injected into the service(s):
 
 ```go
 package example
