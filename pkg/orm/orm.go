@@ -27,12 +27,11 @@ type OrmConfig struct {
 	DbUser              string
 	DbPassword          string
 	DbHost              string
-	DbPort              *int                  // defaults to 3306
-	UseUnixSocket       *bool                 // defaults to false (set to true when on Cloud Run)
-	MaxIdleConns        *int                  // default to 100
-	MaxOpenConns        *int                  // default to 100
-	ConnMaxLifetimeMins *int                  // defaults to 15
-	MigrateModels       *func() []interface{} // Provide models to run migration for
+	DbPort              *int  // defaults to 3306
+	UseUnixSocket       *bool // defaults to false (set to true when on Cloud Run)
+	MaxIdleConns        *int  // default to 100
+	MaxOpenConns        *int  // default to 100
+	ConnMaxLifetimeMins *int  // defaults to 15
 	Logger              *logger.Interface
 }
 
@@ -64,9 +63,7 @@ type Orm struct {
 }
 
 func NewMySqlOrm(config *OrmConfig) *Orm {
-	config.setDefaults(
-		defaultMySqlLogger,
-	)
+	config.setDefaults(defaultMySqlLogger)
 
 	db, err := gorm.Open(
 		mysql.Open(dsn(config)),
@@ -80,9 +77,7 @@ func NewMySqlOrm(config *OrmConfig) *Orm {
 }
 
 func NewSQLiteOrm(config *OrmConfig) *Orm {
-	config.setDefaults(
-		defaultSQLiteLogger,
-	)
+	config.setDefaults(defaultSQLiteLogger)
 
 	db, err := gorm.Open(
 		sqlite.Open("file::memory:?cache=shared"),
@@ -112,18 +107,11 @@ func newOrm(db *gorm.DB, config *OrmConfig) *Orm {
 	sqlDB.SetMaxOpenConns(*config.MaxOpenConns)
 	sqlDB.SetConnMaxLifetime(time.Duration(*config.ConnMaxLifetimeMins) * time.Minute)
 
-	if config.MigrateModels != nil {
-		migrate(db, (*config.MigrateModels)()...)
-	}
-
 	return &Orm{db}
 }
 
-func migrate(db *gorm.DB, models ...interface{}) {
-	err := db.AutoMigrate(models)
-	if err != nil {
-		panic("Migration failed: " + err.Error())
-	}
+func (o *Orm) GetMigrator() gorm.Migrator {
+	return o.Migrator()
 }
 
 // Create DB connection string based on the configuration given on creating the database object

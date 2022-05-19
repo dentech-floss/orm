@@ -112,7 +112,7 @@ func (r *sqlRepository) FindClinicById(ctx context.Context, clinicId int32) (*mo
 
 ### Migration
 
-You can define a func that provides models for [auto migration](https://gorm.io/docs/migration.html#Auto-Migration) like this:
+You can get hold of the [Migrator Interface](https://gorm.io/docs/migration.html#Migrator-Interface) and the [Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration) like this in order to handle schema migrations:
 
 ```go
 package example
@@ -123,21 +123,18 @@ import (
 
 func main() {
 
-    // use this is you want to the run migrations at startup of the service
-    migrateModels := func() []interface{} {
-        return []interface{}{&model.Clinic{}}
-    }
-
     orm := orm.NewMySqlOrm(
         &orm.OrmConfig{
             DbName: "clinic",
             DbUser: "some_user",
             DbPassword: "some_pwd",
             DbHost: "some_host",
-            // provide the func if you to run migrations of models, otherwise just skip this
-            MigrateModels: &migrateModels,
         },
     )
+
+    if err := orm.GetMigrator().AutoMigrate(&model.Clinic{}); err != nil {
+        panic(err)
+    }
 }
 ```
 
@@ -155,16 +152,11 @@ import (
 
 func Test_FindClinicById(t *testing.T) {
 
-    migrateModels := func() []interface{} {
-        return []interface{}{&model.Clinic{}}
+    // in-memory database for testing (and create the table)
+    orm := orm.NewSQLiteOrm(&orm.OrmConfig{})
+    if err := orm.GetMigrator().AutoMigrate(&model.Clinic{}); err != nil {
+        panic(err)
     }
-
-    // create an in-memory database for testing
-    orm := orm.NewSQLiteOrm(
-        &orm.OrmConfig{
-            MigrateModels: &migrateModels, // create the table(s)
-        },
-    )
 
     repo := repository.NewSqlRepository(orm)
     patientGatewayServiceV1 := service.NewPatientGatewayServiceV1(repo) // we could inject a mock here otherwise
