@@ -15,7 +15,6 @@ import (
 )
 
 var defaultDbPort = 3306
-var defaultUseUnixSocket = false
 var defaultMaxIdleConns = 100
 var defaultMaxOpenConns = 100
 var defaultConnMaxLifetimeMins = 15
@@ -23,15 +22,15 @@ var defaultMySqlLogger = logger.Discard.LogMode(logger.Silent) // rely on Opente
 var defaultSQLiteLogger = logger.Default.LogMode(logger.Info)
 
 type OrmConfig struct {
+	OnGCP               bool
 	DbName              string
 	DbUser              string
 	DbPassword          string
 	DbHost              string
-	DbPort              *int  // defaults to 3306
-	UseUnixSocket       *bool // defaults to false (set to true when on Cloud Run)
-	MaxIdleConns        *int  // default to 100
-	MaxOpenConns        *int  // default to 100
-	ConnMaxLifetimeMins *int  // defaults to 15
+	DbPort              *int // defaults to 3306
+	MaxIdleConns        *int // default to 100
+	MaxOpenConns        *int // default to 100
+	ConnMaxLifetimeMins *int // defaults to 15
 	Logger              *logger.Interface
 }
 
@@ -40,9 +39,6 @@ func (c *OrmConfig) setDefaults(
 ) {
 	if c.DbPort == nil {
 		c.DbPort = &defaultDbPort
-	}
-	if c.UseUnixSocket == nil {
-		c.UseUnixSocket = &defaultUseUnixSocket
 	}
 	if c.MaxIdleConns == nil {
 		c.MaxIdleConns = &defaultMaxIdleConns
@@ -110,18 +106,15 @@ func newOrm(db *gorm.DB, config *OrmConfig) *Orm {
 	return &Orm{db}
 }
 
-func (o *Orm) GetMigrator() gorm.Migrator {
-	return o.Migrator()
-}
-
 // Create DB connection string based on the configuration given on creating the database object
 func dsn(config *OrmConfig) string {
 	// When running on Cloud Run we need to connect using Unix Sockets.
 	// See https://cloud.google.com/sql/docs/mysql/connect-run#go
-	if *config.UseUnixSocket {
+	if config.OnGCP {
 		return unixDsn(config)
+	} else {
+		return tcpDsn(config)
 	}
-	return tcpDsn(config)
 }
 
 func unixDsn(config *OrmConfig) string {

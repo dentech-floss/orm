@@ -9,7 +9,7 @@ Do also check out the [dentech-floss/pagination](https://github.com/dentech-flos
 ## Install
 
 ```
-go get github.com/dentech-floss/orm@v0.1.1
+go get github.com/dentech-floss/orm@v0.1.2
 ```
 
 ## Usage
@@ -43,14 +43,12 @@ func main() {
 
     orm := orm.NewMySqlOrm(
         &orm.OrmConfig{
+            OnGCP: true,
             DbName: "clinic",
             DbUser: "some_user",
             DbPassword: "some_pwd",
             DbHost: "some_host",
-            DbPort: 3306, // not mandatory to provide, will default to 3306 if not provided
-            // this is optional, it defaults to false but shall be set to true when on Cloud Run.
-            // See https://cloud.google.com/sql/docs/mysql/connect-run#go
-            UseUnixSocket: true,
+            DbPort: 3306, // not mandatory, will default to 3306 if not provided
         },
     )
 
@@ -113,7 +111,7 @@ func (r *sqlRepository) FindClinicById(ctx context.Context, clinicId int32) (*mo
 
 ### Migration
 
-You can get hold of the [Migrator Interface](https://gorm.io/docs/migration.html#Migrator-Interface) and the [Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration) like this in order to handle schema migrations:
+You can get hold of the [Migrator Interface](https://gorm.io/docs/migration.html#Migrator-Interface) and for example it's [Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration) like this in order to handle schema migrations:
 
 ```go
 package example
@@ -126,6 +124,7 @@ func main() {
 
     orm := orm.NewMySqlOrm(
         &orm.OrmConfig{
+            OnGCP: true,
             DbName: "clinic",
             DbUser: "some_user",
             DbPassword: "some_pwd",
@@ -133,7 +132,7 @@ func main() {
         },
     )
 
-    if err := orm.GetMigrator().AutoMigrate(&model.Clinic{}); err != nil {
+    if err := orm.Migrator().AutoMigrate(&model.Clinic{}); err != nil {
         panic(err)
     }
 }
