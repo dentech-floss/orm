@@ -36,19 +36,22 @@ import (
     "github.com/dentechse/some-service/internal/domain/repository"
     "github.com/dentechse/some-service/pkg/service"
 
+    "github.com/dentech-floss/metadata/pkg/metadata"
     "github.com/dentech-floss/orm/pkg/orm"
 )
 
 func main() {
 
+    metadata := metadata.NewMetadata()
+
     orm := orm.NewMySqlOrm(
         &orm.OrmConfig{
-            OnGCP: true,
-            DbName: "clinic",
-            DbUser: "some_user",
+            OnGCP:      metadata.OnGCP,
+            DbName:     "clinic",
+            DbUser:     "some_user",
             DbPassword: "some_pwd",
-            DbHost: "some_host",
-            DbPort: 3306, // not mandatory, will default to 3306 if not provided
+            DbHost:     "some_host",
+            // DbPort:     3306, // not mandatory, will default to 3306 if not provided
         },
     )
 
@@ -117,18 +120,21 @@ You can get hold of the [Migrator Interface](https://gorm.io/docs/migration.html
 package example
 
 import (
+    "github.com/dentech-floss/metadata/pkg/metadata"
     "github.com/dentech-floss/orm/pkg/orm"
 )
 
 func main() {
 
+    metadata := metadata.NewMetadata()
+
     orm := orm.NewMySqlOrm(
         &orm.OrmConfig{
-            OnGCP: true,
-            DbName: "clinic",
-            DbUser: "some_user",
+            OnGCP:      metadata.OnGCP,
+            DbName:     "clinic",
+            DbUser:     "some_user",
             DbPassword: "some_pwd",
-            DbHost: "some_host",
+            DbHost:     "some_host",
         },
     )
 
