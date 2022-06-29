@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 )
 
@@ -22,16 +23,17 @@ var defaultMySqlLogger = logger.Discard.LogMode(logger.Silent) // rely on Opente
 var defaultSQLiteLogger = logger.Default.LogMode(logger.Info)
 
 type OrmConfig struct {
-	OnGCP               bool
-	DbName              string
-	DbUser              string
-	DbPassword          string
-	DbHost              string
-	DbPort              *int // defaults to 3306
-	MaxIdleConns        *int // default to 100
-	MaxOpenConns        *int // default to 100
-	ConnMaxLifetimeMins *int // defaults to 15
-	Logger              *logger.Interface
+	OnGCP                 bool
+	DbName                string
+	DbUser                string
+	DbPassword            string
+	DbHost                string
+	DbPort                *int // defaults to 3306
+	MaxIdleConns          *int // default to 100
+	MaxOpenConns          *int // default to 100
+	ConnMaxLifetimeMins   *int // defaults to 15
+	Logger                *logger.Interface
+	MigrateUseTransaction bool
 }
 
 func (c *OrmConfig) setDefaults(
@@ -56,6 +58,11 @@ func (c *OrmConfig) setDefaults(
 
 type Orm struct {
 	*gorm.DB
+	config *OrmConfig
+}
+
+type Migration struct {
+	*gormigrate.Migration
 }
 
 func NewMySqlOrm(config *OrmConfig) *Orm {
@@ -103,7 +110,7 @@ func newOrm(db *gorm.DB, config *OrmConfig) *Orm {
 	sqlDB.SetMaxOpenConns(*config.MaxOpenConns)
 	sqlDB.SetConnMaxLifetime(time.Duration(*config.ConnMaxLifetimeMins) * time.Minute)
 
-	return &Orm{db}
+	return &Orm{db, config}
 }
 
 // Create DB connection string based on the configuration given on creating the database object
@@ -133,4 +140,19 @@ func tcpDsn(config *OrmConfig) string {
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
 		config.DbUser, config.DbPassword, config.DbHost, port, config.DbName)
+}
+
+func (db *Orm) RunMigrations(migrations []*Migration) {
+	options := gormigrate.DefaultOptions
+	options.UseTransaction = db.config.MigrateUseTransaction
+	ms := make([]*gormigrate.Migration, 0, len(migrations))
+	for _, m := range migrations {
+		ms = append(ms, m.Migration)
+	}
+
+	m := gormigrate.New(db.DB, options, ms)
+
+	if err := m.Migrate(); err != nil {
+		panic(err)
+	}
 }
