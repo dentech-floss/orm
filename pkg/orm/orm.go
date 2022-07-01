@@ -61,8 +61,14 @@ type Orm struct {
 	config *OrmConfig
 }
 
+// Migration represents a database migration (a modification to be made on the database).
 type Migration struct {
-	*gormigrate.Migration
+	// ID is the migration identifier. Usually a timestamp like "201601021504".
+	ID string
+	// Migrate is a function that will br executed while running this migration.
+	Migrate gormigrate.MigrateFunc
+	// Rollback will be executed on rollback. Can be nil.
+	Rollback gormigrate.RollbackFunc
 }
 
 func NewMySqlOrm(config *OrmConfig) *Orm {
@@ -142,17 +148,23 @@ func tcpDsn(config *OrmConfig) string {
 		config.DbUser, config.DbPassword, config.DbHost, port, config.DbName)
 }
 
-func (db *Orm) RunMigrations(migrations []*Migration) {
+func (db *Orm) RunMigrations(migrations []*Migration) error {
 	options := gormigrate.DefaultOptions
 	options.UseTransaction = db.config.MigrateUseTransaction
 	ms := make([]*gormigrate.Migration, 0, len(migrations))
 	for _, m := range migrations {
-		ms = append(ms, m.Migration)
+		ms = append(ms, &gormigrate.Migration{
+			ID:       m.ID,
+			Migrate:  m.Migrate,
+			Rollback: m.Rollback,
+		})
 	}
 
 	m := gormigrate.New(db.DB, options, ms)
 
 	if err := m.Migrate(); err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
