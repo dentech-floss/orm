@@ -19,9 +19,11 @@ var defaultDbPort = 3306
 var defaultMaxIdleConns = 100
 var defaultMaxOpenConns = 100
 var defaultConnMaxLifetimeMins = 15
-var defaultMySqlLogger = logger.Discard.LogMode(logger.Silent) // rely on Opentelemetry
+var defaultMySQLLogger = logger.Discard.LogMode(logger.Silent) // rely on Opentelemetry
 var defaultSQLiteLogger = logger.Default.LogMode(logger.Info)
 
+// OrmConfig - configuration structure for config values at ORM module
+// TODO: Rename to Config
 type OrmConfig struct {
 	OnGCP                 bool
 	DbName                string
@@ -56,6 +58,7 @@ func (c *OrmConfig) setDefaults(
 	}
 }
 
+// Orm - main structure for orm object
 type Orm struct {
 	*gorm.DB
 	config *OrmConfig
@@ -71,8 +74,10 @@ type Migration struct {
 	Rollback gormigrate.RollbackFunc
 }
 
+// NewMySqlOrm - creates a new Orm object with MySQL connection
+// TODO: rename to NewMySQLOrm
 func NewMySqlOrm(config *OrmConfig) *Orm {
-	config.setDefaults(defaultMySqlLogger)
+	config.setDefaults(defaultMySQLLogger)
 
 	db, err := gorm.Open(
 		mysql.Open(dsn(config)),
@@ -85,6 +90,7 @@ func NewMySqlOrm(config *OrmConfig) *Orm {
 	return newOrm(db, config)
 }
 
+// NewSQLiteOrm - creates a new Orm object with SQLite connection
 func NewSQLiteOrm(config *OrmConfig) *Orm {
 	config.setDefaults(defaultSQLiteLogger)
 
@@ -125,9 +131,9 @@ func dsn(config *OrmConfig) string {
 	// See https://cloud.google.com/sql/docs/mysql/connect-run#go
 	if config.OnGCP {
 		return unixDsn(config)
-	} else {
-		return tcpDsn(config)
 	}
+
+	return tcpDsn(config)
 }
 
 func unixDsn(config *OrmConfig) string {
@@ -148,6 +154,7 @@ func tcpDsn(config *OrmConfig) string {
 		config.DbUser, config.DbPassword, config.DbHost, port, config.DbName)
 }
 
+// RunMigrations - apply migrations that weren't applied before
 func (db *Orm) RunMigrations(migrations []*Migration) error {
 	options := gormigrate.DefaultOptions
 	options.UseTransaction = db.config.MigrateUseTransaction
