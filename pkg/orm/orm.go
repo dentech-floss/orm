@@ -68,7 +68,7 @@ type Orm struct {
 type Migration struct {
 	// ID is the migration identifier. Usually a timestamp like "201601021504".
 	ID string
-	// Migrate is a function that will br executed while running this migration.
+	// Migrate is a function that will be executed while running this migration.
 	Migrate gormigrate.MigrateFunc
 	// Rollback will be executed on rollback. Can be nil.
 	Rollback gormigrate.RollbackFunc
