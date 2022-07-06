@@ -146,6 +146,53 @@ func main() {
 }
 ```
 
+Also, you could use migrations with a built-in migration helper that has a schema
+versioning table and migration rollback
+
+```go
+package migrations
+
+import (
+	"database/sql"
+	"time"
+
+	"github.com/dentech-floss/orm/pkg/orm"
+	"gorm.io/gorm"
+)
+
+var Migrations []*orm.Migration
+
+func init() {
+    Migrations = append(Migrations,
+        createTableBankid(),
+    )
+}
+
+func createTableBankid() *orm.Migration {
+    return &orm.Migration{
+        ID: "20220629143700",
+        Migrate: func(tx *gorm.DB) error {
+            type SomeEntity struct {
+                ID                  int
+                CreatedAt           time.Time
+                UpdatedAt           time.Time
+                StringData          string
+                StringDataOrNull    sql.NullString
+            }
+
+            return tx.AutoMigrate(&Bankid{})
+        },
+    }
+}
+
+```
+
+And after execute migrations
+
+```go
+	err := orm.RunMigrations(migrations.Migrations)
+```
+
 ### Testing
 
 To create and inject an in-memory SQLite database for testing:

@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 )
 
@@ -18,20 +19,23 @@ var defaultDbPort = 3306
 var defaultMaxIdleConns = 100
 var defaultMaxOpenConns = 100
 var defaultConnMaxLifetimeMins = 15
-var defaultMySqlLogger = logger.Discard.LogMode(logger.Silent) // rely on Opentelemetry
+var defaultMySQLLogger = logger.Discard.LogMode(logger.Silent) // rely on Opentelemetry
 var defaultSQLiteLogger = logger.Default.LogMode(logger.Info)
 
+// OrmConfig - configuration structure for config values at ORM module
+// TODO: Rename to Config
 type OrmConfig struct {
-	OnGCP               bool
-	DbName              string
-	DbUser              string
-	DbPassword          string
-	DbHost              string
-	DbPort              *int // defaults to 3306
-	MaxIdleConns        *int // default to 100
-	MaxOpenConns        *int // default to 100
-	ConnMaxLifetimeMins *int // defaults to 15
-	Logger              *logger.Interface
+	OnGCP                 bool
+	DbName                string
+	DbUser                string
+	DbPassword            string
+	DbHost                string
+	DbPort                *int // defaults to 3306
+	MaxIdleConns          *int // default to 100
+	MaxOpenConns          *int // default to 100
+	ConnMaxLifetimeMins   *int // defaults to 15
+	Logger                *logger.Interface
+	MigrateUseTransaction bool
 }
 
 func (c *OrmConfig) setDefaults(
@@ -54,12 +58,26 @@ func (c *OrmConfig) setDefaults(
 	}
 }
 
+// Orm - main structure for orm object
 type Orm struct {
 	*gorm.DB
+	config *OrmConfig
 }
 
+// Migration represents a database migration (a modification to be made on the database).
+type Migration struct {
+	// ID is the migration identifier. Usually a timestamp like "201601021504".
+	ID string
+	// Migrate is a function that will be executed while running this migration.
+	Migrate gormigrate.MigrateFunc
+	// Rollback will be executed on rollback. Can be nil.
+	Rollback gormigrate.RollbackFunc
+}
+
+// NewMySqlOrm - creates a new Orm object with MySQL connection
+// TODO: rename to NewMySQLOrm
 func NewMySqlOrm(config *OrmConfig) *Orm {
-	config.setDefaults(defaultMySqlLogger)
+	config.setDefaults(defaultMySQLLogger)
 
 	db, err := gorm.Open(
 		mysql.Open(dsn(config)),
@@ -72,6 +90,7 @@ func NewMySqlOrm(config *OrmConfig) *Orm {
 	return newOrm(db, config)
 }
 
+// NewSQLiteOrm - creates a new Orm object with SQLite connection
 func NewSQLiteOrm(config *OrmConfig) *Orm {
 	config.setDefaults(defaultSQLiteLogger)
 
@@ -103,7 +122,7 @@ func newOrm(db *gorm.DB, config *OrmConfig) *Orm {
 	sqlDB.SetMaxOpenConns(*config.MaxOpenConns)
 	sqlDB.SetConnMaxLifetime(time.Duration(*config.ConnMaxLifetimeMins) * time.Minute)
 
-	return &Orm{db}
+	return &Orm{db, config}
 }
 
 // Create DB connection string based on the configuration given on creating the database object
@@ -112,9 +131,9 @@ func dsn(config *OrmConfig) string {
 	// See https://cloud.google.com/sql/docs/mysql/connect-run#go
 	if config.OnGCP {
 		return unixDsn(config)
-	} else {
-		return tcpDsn(config)
 	}
+
+	return tcpDsn(config)
 }
 
 func unixDsn(config *OrmConfig) string {
@@ -133,4 +152,26 @@ func tcpDsn(config *OrmConfig) string {
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
 		config.DbUser, config.DbPassword, config.DbHost, port, config.DbName)
+}
+
+// RunMigrations - apply migrations that weren't applied before
+func (db *Orm) RunMigrations(migrations []*Migration) error {
+	options := gormigrate.DefaultOptions
+	options.UseTransaction = db.config.MigrateUseTransaction
+	ms := make([]*gormigrate.Migration, 0, len(migrations))
+	for _, m := range migrations {
+		ms = append(ms, &gormigrate.Migration{
+			ID:       m.ID,
+			Migrate:  m.Migrate,
+			Rollback: m.Rollback,
+		})
+	}
+
+	m := gormigrate.New(db.DB, options, ms)
+
+	if err := m.Migrate(); err != nil {
+		return err
+	}
+
+	return nil
 }
