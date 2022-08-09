@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/uptrace/opentelemetry-go-extra/otelgorm"
 )
 
@@ -23,19 +22,17 @@ var defaultMySQLLogger = logger.Discard.LogMode(logger.Silent) // rely on Opente
 var defaultSQLiteLogger = logger.Default.LogMode(logger.Info)
 
 // OrmConfig - configuration structure for config values at ORM module
-// TODO: Rename to Config
 type OrmConfig struct {
-	OnGCP                 bool
-	DbName                string
-	DbUser                string
-	DbPassword            string
-	DbHost                string
-	DbPort                *int // defaults to 3306
-	MaxIdleConns          *int // default to 100
-	MaxOpenConns          *int // default to 100
-	ConnMaxLifetimeMins   *int // defaults to 15
-	Logger                *logger.Interface
-	MigrateUseTransaction bool
+	OnGCP               bool
+	DbName              string
+	DbUser              string
+	DbPassword          string
+	DbHost              string
+	DbPort              *int // defaults to 3306
+	MaxIdleConns        *int // default to 100
+	MaxOpenConns        *int // default to 100
+	ConnMaxLifetimeMins *int // defaults to 15
+	Logger              *logger.Interface
 }
 
 func (c *OrmConfig) setDefaults(
@@ -64,18 +61,7 @@ type Orm struct {
 	config *OrmConfig
 }
 
-// Migration represents a database migration (a modification to be made on the database).
-type Migration struct {
-	// ID is the migration identifier. Usually a timestamp like "201601021504".
-	ID string
-	// Migrate is a function that will be executed while running this migration.
-	Migrate gormigrate.MigrateFunc
-	// Rollback will be executed on rollback. Can be nil.
-	Rollback gormigrate.RollbackFunc
-}
-
 // NewMySqlOrm - creates a new Orm object with MySQL connection
-// TODO: rename to NewMySQLOrm
 func NewMySqlOrm(config *OrmConfig) *Orm {
 	config.setDefaults(defaultMySQLLogger)
 
@@ -152,26 +138,4 @@ func tcpDsn(config *OrmConfig) string {
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
 		config.DbUser, config.DbPassword, config.DbHost, port, config.DbName)
-}
-
-// RunMigrations - apply migrations that weren't applied before
-func (db *Orm) RunMigrations(migrations []*Migration) error {
-	options := gormigrate.DefaultOptions
-	options.UseTransaction = db.config.MigrateUseTransaction
-	ms := make([]*gormigrate.Migration, 0, len(migrations))
-	for _, m := range migrations {
-		ms = append(ms, &gormigrate.Migration{
-			ID:       m.ID,
-			Migrate:  m.Migrate,
-			Rollback: m.Rollback,
-		})
-	}
-
-	m := gormigrate.New(db.DB, options, ms)
-
-	if err := m.Migrate(); err != nil {
-		return err
-	}
-
-	return nil
 }

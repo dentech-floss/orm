@@ -11,7 +11,7 @@ Do also check out the [dentech-floss/pagination](https://github.com/dentech-flos
 ## Install
 
 ```
-go get github.com/dentech-floss/orm@v0.1.2
+go get github.com/dentech-floss/orm@v0.1.3
 ```
 
 ## Usage
@@ -116,7 +116,96 @@ func (r *sqlRepository) FindClinicById(ctx context.Context, clinicId int32) (*mo
 
 ### Migration
 
-You can get hold of the [Migrator Interface](https://gorm.io/docs/migration.html#Migrator-Interface) and for example it's [Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration) like this in order to handle schema migrations:
+This lib includes [Gormigrate](https://github.com/go-gormigrate/gormigrate) which is a minimalistic migration helper for GORM that provide support for schema versioning and migration rollback. Gormigrate is in other words more advanced and robust/reliable to use instead of the standard [GORM Migrator Interface](https://gorm.io/docs/migration.html#Migrator-Interface) so this is the recommeded approach, but both options are supported as shown in the below examples.
+
+#### Gormigrate
+
+```go
+package example
+
+import (
+    "github.com/dentech-floss/metadata/pkg/metadata"
+    "github.com/dentech-floss/orm/pkg/orm"
+
+    "gorm.io/gorm"
+    "github.com/go-gormigrate/gormigrate/v2"
+)
+
+func main() {
+
+    metadata := metadata.NewMetadata()
+
+    orm := orm.NewMySqlOrm(
+        &orm.OrmConfig{
+            OnGCP:      metadata.OnGCP,
+            DbName:     "clinic",
+            DbUser:     "some_user",
+            DbPassword: "some_pwd",
+            DbHost:     "some_host",
+        },
+    )
+
+    if err := runMigrations(orm); err != nil {
+        panic(err)
+    }
+}
+
+func runMigrations(orm *orm.Orm) error {
+    // Or use 'orm.RunMigrationsInSingleTransaction' to just enable the 'UseTransaction' options flag
+    return orm.RunMigrations(gormigrate.DefaultOptions, []*gormigrate.Migration{
+        // create persons table
+        {
+            ID: "201608301400",
+            Migrate: func(tx *gorm.DB) error {
+                // it's a good pratice to copy the struct inside the function,
+                // so side effects are prevented if the original struct changes during the time
+                type Person struct {
+                    gorm.Model
+                    Name string
+                }
+                return tx.AutoMigrate(&Person{})
+            },
+            Rollback: func(tx *gorm.DB) error {
+                return tx.Migrator().DropTable("persons")
+            },
+        },
+        // add age column to persons
+        {
+            ID: "201608301415",
+            Migrate: func(tx *gorm.DB) error {
+                // when table already exists, it just adds fields as columns
+                type Person struct {
+                    Age int
+                }
+                return tx.AutoMigrate(&Person{})
+            },
+            Rollback: func(tx *gorm.DB) error {
+                return tx.Migrator().DropColumn("persons", "age")
+            },
+        },
+        // add pets table
+        {
+            ID: "201608301430",
+            Migrate: func(tx *gorm.DB) error {
+                type Pet struct {
+                    gorm.Model
+                    Name     string
+                    PersonID int
+                }
+                return tx.AutoMigrate(&Pet{})
+            },
+            Rollback: func(tx *gorm.DB) error {
+                return tx.Migrator().DropTable("pets")
+            },
+        },
+    })
+}
+
+```
+
+#### GORM Migrator Interface
+
+If you for some reason do not want to use Gormigrate, then you can get hold of the standard [GORM Migrator Interface](https://gorm.io/docs/migration.html#Migrator-Interface) and for example it's [Auto Migration](https://gorm.io/docs/migration.html#Auto-Migration) like this:
 
 ```go
 package example
@@ -146,53 +235,6 @@ func main() {
 }
 ```
 
-Also, you could use migrations with a built-in migration helper that has a schema
-versioning table and migration rollback
-
-```go
-package migrations
-
-import (
-	"database/sql"
-	"time"
-
-	"github.com/dentech-floss/orm/pkg/orm"
-	"gorm.io/gorm"
-)
-
-var Migrations []*orm.Migration
-
-func init() {
-    Migrations = append(Migrations,
-        createTableBankid(),
-    )
-}
-
-func createTableBankid() *orm.Migration {
-    return &orm.Migration{
-        ID: "20220629143700",
-        Migrate: func(tx *gorm.DB) error {
-            type SomeEntity struct {
-                ID                  int
-                CreatedAt           time.Time
-                UpdatedAt           time.Time
-                StringData          string
-                StringDataOrNull    sql.NullString
-            }
-
-            return tx.AutoMigrate(&Bankid{})
-        },
-    }
-}
-
-```
-
-And after execute migrations
-
-```go
-	err := orm.RunMigrations(migrations.Migrations)
-```
-
 ### Testing
 
 To create and inject an in-memory SQLite database for testing:
@@ -209,6 +251,8 @@ func Test_FindClinicById(t *testing.T) {
 
     // in-memory database for testing (and create the table)
     orm := orm.NewSQLiteOrm(&orm.OrmConfig{})
+
+    // ...or use the Gormigrate support as described above...
     if err := orm.GetMigrator().AutoMigrate(&model.Clinic{}); err != nil {
         panic(err)
     }
