@@ -45,7 +45,7 @@ func (m Migration) RollbackLastMigration(
 ) error {
 	gm := gormigrate.New(m.db.DB, m.options, migrations)
 
-	if err := gm.Migrate(); err != nil {
+	if err := gm.RollbackLast(); err != nil {
 		return err
 	}
 
