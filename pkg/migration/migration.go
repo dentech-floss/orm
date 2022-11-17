@@ -16,10 +16,12 @@ type Option func(*gormigrate.Options) *gormigrate.Options
 
 // NewMigration - create migration instance
 func NewMigration(db *orm.Orm, options ...Option) *Migration {
-	goptions := gormigrate.DefaultOptions
+	goptions := &gormigrate.Options{}
+	*goptions = *gormigrate.DefaultOptions
 	for _, f := range options {
 		goptions = f(goptions)
 	}
+
 	return &Migration{
 		db:      db,
 		options: goptions,
