@@ -15,9 +15,9 @@ import (
 )
 
 var defaultDbPort = 3306
-var defaultMaxIdleConns = 100
-var defaultMaxOpenConns = 100
-var defaultConnMaxLifetimeMins = 15
+var defaultMaxIdleConns = 25
+var defaultMaxOpenConns = 25
+var defaultConnMaxLifetimeMins = 5
 var defaultMySQLLogger = logger.Discard.LogMode(logger.Silent) // rely on Opentelemetry
 var defaultSQLiteLogger = logger.Default.LogMode(logger.Info)
 
