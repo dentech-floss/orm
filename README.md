@@ -11,7 +11,7 @@ Do also check out the [dentech-floss/pagination](https://github.com/dentech-flos
 ## Install
 
 ```
-go get github.com/dentech-floss/orm@v0.1.4
+go get github.com/dentech-floss/orm@v0.1.5
 ```
 
 ## Usage
@@ -125,6 +125,7 @@ package example
 
 import (
     "github.com/dentech-floss/metadata/pkg/metadata"
+    "github.com/dentech-floss/orm/pkg/migration"
     "github.com/dentech-floss/orm/pkg/orm"
 
     "gorm.io/gorm"
@@ -151,8 +152,10 @@ func main() {
 }
 
 func runMigrations(orm *orm.Orm) error {
-    // Or use 'orm.RunMigrationsInSingleTransaction' to just enable the 'UseTransaction' options flag
-    return orm.RunMigrations(gormigrate.DefaultOptions, []*gormigrate.Migration{
+    // Or use 'migration.NewMigration(orm, migration.WithUseTransaction)' to just enable the 'UseTransaction' options flag
+    return migration.
+        NewMigration(orm).
+        RunMigrations([]*gormigrate.Migration{
         // create persons table
         {
             ID: "201608301400",
@@ -200,6 +203,94 @@ func runMigrations(orm *orm.Orm) error {
         },
     })
 }
+
+```
+
+You can rollback last applied migration (could be run more times):
+```go
+package example
+
+import (
+    "github.com/dentech-floss/metadata/pkg/metadata"
+    "github.com/dentech-floss/orm/pkg/orm"
+    "github.com/dentech-floss/orm/pkg/migration"
+
+    "gorm.io/gorm"
+    "github.com/go-gormigrate/gormigrate/v2"
+)
+
+func main() {
+
+    metadata := metadata.NewMetadata()
+
+    orm := orm.NewMySqlOrm(
+        &orm.OrmConfig{
+            OnGCP:      metadata.OnGCP,
+            DbName:     "clinic",
+            DbUser:     "some_user",
+            DbPassword: "some_pwd",
+            DbHost:     "some_host",
+        },
+    )
+
+    if err := runRollback(orm); err != nil {
+        panic(err)
+    }
+}
+
+func runRollback(orm *orm.Orm) error {
+    // Or use 'migration.NewMigration(orm, migration.WithUseTransaction)' to just enable the 'UseTransaction' options flag
+    return migration.
+        NewMigration(orm).
+        RollbackLastMigration([]*gormigrate.Migration{
+        // create persons table
+        {
+            ID: "201608301400",
+            Migrate: func(tx *gorm.DB) error {
+                // it's a good pratice to copy the struct inside the function,
+                // so side effects are prevented if the original struct changes during the time
+                type Person struct {
+                    gorm.Model
+                    Name string
+                }
+                return tx.AutoMigrate(&Person{})
+            },
+            Rollback: func(tx *gorm.DB) error {
+                return tx.Migrator().DropTable("persons")
+            },
+        },
+        // add age column to persons
+        {
+            ID: "201608301415",
+            Migrate: func(tx *gorm.DB) error {
+                // when table already exists, it just adds fields as columns
+                type Person struct {
+                    Age int
+                }
+                return tx.AutoMigrate(&Person{})
+            },
+            Rollback: func(tx *gorm.DB) error {
+                return tx.Migrator().DropColumn("persons", "age")
+            },
+        },
+        // add pets table
+        {
+            ID: "201608301430",
+            Migrate: func(tx *gorm.DB) error {
+                type Pet struct {
+                    gorm.Model
+                    Name     string
+                    PersonID int
+                }
+                return tx.AutoMigrate(&Pet{})
+            },
+            Rollback: func(tx *gorm.DB) error {
+                return tx.Migrator().DropTable("pets")
+            },
+        },
+    })
+}
+
 
 ```
 
