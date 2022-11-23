@@ -11,7 +11,7 @@ Do also check out the [dentech-floss/pagination](https://github.com/dentech-flos
 ## Install
 
 ```
-go get github.com/dentech-floss/orm@v0.1.3
+go get github.com/dentech-floss/orm@v0.1.5
 ```
 
 ## Usage
@@ -125,8 +125,8 @@ package example
 
 import (
     "github.com/dentech-floss/metadata/pkg/metadata"
-    "github.com/dentech-floss/orm/pkg/orm"
     "github.com/dentech-floss/orm/pkg/migration"
+    "github.com/dentech-floss/orm/pkg/orm"
 
     "gorm.io/gorm"
     "github.com/go-gormigrate/gormigrate/v2"
