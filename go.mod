@@ -6,7 +6,7 @@ require (
 	github.com/go-gormigrate/gormigrate/v2 v2.1.0
 	github.com/uptrace/opentelemetry-go-extra/otelgorm v0.2.2
 	gorm.io/driver/mysql v1.5.4
-	gorm.io/driver/sqlite v1.5.2
+	gorm.io/driver/sqlite v1.5.5
 	gorm.io/gorm v1.25.7
 )
 
