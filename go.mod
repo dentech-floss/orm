@@ -3,11 +3,11 @@ module github.com/dentech-floss/orm
 go 1.17
 
 require (
-	github.com/go-gormigrate/gormigrate/v2 v2.1.1
+	github.com/go-gormigrate/gormigrate/v2 v2.1.2
 	github.com/uptrace/opentelemetry-go-extra/otelgorm v0.2.3
 	gorm.io/driver/mysql v1.5.4
 	gorm.io/driver/sqlite v1.5.5
-	gorm.io/gorm v1.25.7
+	gorm.io/gorm v1.25.8
 )
 
 require (
