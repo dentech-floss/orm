@@ -32,7 +32,7 @@ type OrmConfig struct {
 	MaxIdleConns        *int // default to 100
 	MaxOpenConns        *int // default to 100
 	ConnMaxLifetimeMins *int // defaults to 15
-	Logger              *logger.Interface
+	Logger              logger.Interface
 }
 
 func (c *OrmConfig) setDefaults(
@@ -51,7 +51,7 @@ func (c *OrmConfig) setDefaults(
 		c.ConnMaxLifetimeMins = &defaultConnMaxLifetimeMins
 	}
 	if c.Logger == nil {
-		c.Logger = &defaultLogger
+		c.Logger = defaultLogger
 	}
 }
 
@@ -67,7 +67,7 @@ func NewMySqlOrm(config *OrmConfig) *Orm {
 
 	db, err := gorm.Open(
 		mysql.Open(dsn(config)),
-		&gorm.Config{Logger: *config.Logger},
+		&gorm.Config{Logger: config.Logger},
 	)
 	if err != nil {
 		panic(err)
@@ -82,7 +82,7 @@ func NewSQLiteOrm(config *OrmConfig) *Orm {
 
 	db, err := gorm.Open(
 		sqlite.Open("file::memory:?cache=shared"),
-		&gorm.Config{Logger: *config.Logger},
+		&gorm.Config{Logger: config.Logger},
 	)
 	if err != nil {
 		panic(err)
@@ -91,7 +91,10 @@ func NewSQLiteOrm(config *OrmConfig) *Orm {
 	return newOrm(db, config)
 }
 
-func newOrm(db *gorm.DB, config *OrmConfig) *Orm {
+func newOrm(
+	db *gorm.DB,
+	config *OrmConfig,
+) *Orm {
 
 	// instrument GORM for tracing
 	if err := db.Use(otelgorm.NewPlugin()); err != nil {
