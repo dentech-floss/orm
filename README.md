@@ -11,7 +11,7 @@ Do also check out the [dentech-floss/pagination](https://github.com/dentech-flos
 ## Install
 
 ```
-go get github.com/dentech-floss/orm@v0.1.10
+go get github.com/dentech-floss/orm@v0.1.11
 ```
 
 ## Usage
