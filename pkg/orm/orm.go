@@ -67,7 +67,7 @@ func NewMySqlOrm(config *OrmConfig) *Orm {
 
 	db, err := gorm.Open(
 		mysql.Open(dsn(config)),
-		&gorm.Config{Logger: *config.Logger},
+		&gorm.Config{Logger: config.Logger},
 	)
 	if err != nil {
 		panic(err)
@@ -82,7 +82,7 @@ func NewSQLiteOrm(config *OrmConfig) *Orm {
 
 	db, err := gorm.Open(
 		sqlite.Open("file::memory:?cache=shared"),
-		&gorm.Config{Logger: *config.Logger},
+		&gorm.Config{Logger: config.Logger},
 	)
 	if err != nil {
 		panic(err)
