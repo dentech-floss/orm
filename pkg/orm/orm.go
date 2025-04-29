@@ -32,7 +32,7 @@ type OrmConfig struct {
 	MaxIdleConns        *int // default to 100
 	MaxOpenConns        *int // default to 100
 	ConnMaxLifetimeMins *int // defaults to 15
-	Logger              *logger.Interface
+	Logger              logger.Interface
 }
 
 func (c *OrmConfig) setDefaults(
@@ -51,7 +51,7 @@ func (c *OrmConfig) setDefaults(
 		c.ConnMaxLifetimeMins = &defaultConnMaxLifetimeMins
 	}
 	if c.Logger == nil {
-		c.Logger = &defaultLogger
+		c.Logger = defaultLogger
 	}
 }
 
