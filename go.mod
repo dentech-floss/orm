@@ -5,7 +5,7 @@ go 1.26
 toolchain go1.26.0
 
 require (
-	github.com/go-gormigrate/gormigrate/v2 v2.1.5
+	github.com/go-gormigrate/gormigrate/v2 v2.1.6
 	github.com/uptrace/opentelemetry-go-extra/otelgorm v0.3.2
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/sqlite v1.6.0
