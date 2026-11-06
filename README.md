@@ -8,6 +8,14 @@ Opentelemetry instrumentation is also configured via the [otelgorm](https://gith
 
 Do also check out the [dentech-floss/pagination](https://github.com/dentech-floss/pagination) lib which goes hand in hand with this lib.
 
+## TLS
+
+Connections over TCP can use TLS: point `TLSCAFile` in `OrmConfig`, or the environment variable `DB_TLS_CA_FILE`, to a PEM file with the CA(s) to trust. The lib then verifies the server's certificate and its hostname, so `DbHost` must be a name the certificate covers.
+
+The file can hold several certificates. To replace a CA, trust the old and the new one at once. The file is read once, at startup. If it can't be read or holds no certificates, `NewMySqlOrm` panics rather than connecting without TLS.
+
+Unix socket connections (`OnGCP`) ignore this setting.
+
 ## Install
 
 ```
