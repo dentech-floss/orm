@@ -1,6 +1,6 @@
 # orm
 
-For Object Relational Mappings we use [GORM](https://gorm.io/index.html) which is wrapped here and configured to support accessing "Cloud SQL for MySQL" from services running on Cloud Run. Connecting to a locally running MySQL is of course also possible, as well as creating an in-memory SQLite database to use in tests. 
+For Object Relational Mappings we use [GORM](https://gorm.io/index.html) which is wrapped here and configured to support accessing "Cloud SQL for MySQL" from services running on Cloud Run. Connecting to any other MySQL over TCP is also possible, with [TLS](#tls) if the server requires it, as well as creating an in-memory SQLite database to use in tests. 
 
 For performance reasons, the underlying connection pool is preconfigured in accordance to this great read: [Configuring sql.DB for Better Performance](https://www.alexedwards.net/blog/configuring-sqldb), so there should be no need for any custom configuration (all though it is possible).
 
@@ -19,7 +19,7 @@ Unix socket connections (`OnGCP`) ignore this setting.
 ## Install
 
 ```
-go get github.com/dentech-floss/orm@v0.1.11
+go get github.com/dentech-floss/orm@v0.1.13
 ```
 
 ## Usage
