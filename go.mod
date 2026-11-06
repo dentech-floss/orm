@@ -6,6 +6,7 @@ toolchain go1.26.0
 
 require (
 	github.com/go-gormigrate/gormigrate/v2 v2.1.6
+	github.com/go-sql-driver/mysql v1.9.3
 	github.com/uptrace/opentelemetry-go-extra/otelgorm v0.3.2
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/sqlite v1.6.0
@@ -17,7 +18,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-sql-driver/mysql v1.9.3 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.34 // indirect

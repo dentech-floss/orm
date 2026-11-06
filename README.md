@@ -1,6 +1,6 @@
 # orm
 
-For Object Relational Mappings we use [GORM](https://gorm.io/index.html) which is wrapped here and configured to support accessing "Cloud SQL for MySQL" from services running on Cloud Run. Connecting to a locally running MySQL is of course also possible, as well as creating an in-memory SQLite database to use in tests. 
+For Object Relational Mappings we use [GORM](https://gorm.io/index.html) which is wrapped here and configured to support accessing "Cloud SQL for MySQL" from services running on Cloud Run. Connecting to any other MySQL over TCP is also possible, with [TLS](#tls) if the server requires it, as well as creating an in-memory SQLite database to use in tests. 
 
 For performance reasons, the underlying connection pool is preconfigured in accordance to this great read: [Configuring sql.DB for Better Performance](https://www.alexedwards.net/blog/configuring-sqldb), so there should be no need for any custom configuration (all though it is possible).
 
@@ -8,10 +8,18 @@ Opentelemetry instrumentation is also configured via the [otelgorm](https://gith
 
 Do also check out the [dentech-floss/pagination](https://github.com/dentech-floss/pagination) lib which goes hand in hand with this lib.
 
+## TLS
+
+Connections over TCP can use TLS: point `TLSCAFile` in `OrmConfig`, or the environment variable `DB_TLS_CA_FILE`, to a PEM file with the CA(s) to trust. The lib then verifies the server's certificate and its hostname, so `DbHost` must be a name the certificate covers.
+
+The file can hold several certificates. To replace a CA, trust the old and the new one at once. The file is read once, at startup. If it can't be read or holds no certificates, `NewMySqlOrm` panics rather than connecting without TLS.
+
+Unix socket connections (`OnGCP`) ignore this setting.
+
 ## Install
 
 ```
-go get github.com/dentech-floss/orm@v0.1.11
+go get github.com/dentech-floss/orm@v0.1.13
 ```
 
 ## Usage
